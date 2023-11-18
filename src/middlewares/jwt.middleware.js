@@ -19,7 +19,6 @@ const jwtAuth = (req,res,next)=>{
             );
             // Adding userID to request object which is used in code in other places for security
             req.userID = payload.userID;
-            console.log(payload);
     } catch (err) {
         // 4. Return error
         return res.status(401).send('Unauthorized');

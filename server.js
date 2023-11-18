@@ -1,3 +1,4 @@
+import './env.js';
 // 1. Import express
 import express from 'express';
 import swagger from 'swagger-ui-express';
@@ -12,6 +13,11 @@ import apiDocs from './swagger.json' assert{type : 'json'};
 import cors from 'cors';
 import loggerMiddleware from './src/middlewares/logger.middleware.js';
 import { ApplicationError } from './src/error/applicationError.js';
+import {connectToMongoDB} from './config/mongodb.js';
+import orderRouter from './src/features/order/order.routes.js';
+import { connectUsingMongoose } from './config/mongooseConfig.js';
+import mongoose from 'mongoose';
+import likeRouter from './src/features/like/like.routes.js';
 
 // 2. Create Server
 const server = express();
@@ -46,7 +52,10 @@ server.use(express.json());
 server.use('/api-docs', swagger.serve, swagger.setup(apiDocs));
 server.use("/api/products", jwtAuth, productRouter);
 server.use("/api/cartItems", jwtAuth, cartRouter);
-server.use("/api/users/", userRouter);
+server.use("/api/orders", jwtAuth, orderRouter);
+server.use("/api/users", userRouter);
+server.use('/api/likes', likeRouter);
+
 
 // 3. Default request handler
 server.get('/', (req, res)=>{
@@ -56,9 +65,13 @@ server.get('/', (req, res)=>{
 // Error handler middleware
 server.use((err,req,res,next)=>{
     console.log(err);
+    if(err instanceof mongoose.Error.ValidationError)
+    {
+        return res.status(400).send(err.message);
+    }
     if(err instanceof ApplicationError)
     {
-        res.status(err.code).send(err.message);
+        return res.status(err.code).send(err.message);
     }
     // Server errors
     res.status(503).send('Something went wrong please try later');
@@ -72,5 +85,7 @@ server.use((req,res)=>{
 // 5. Specify port.
 server.listen(3200,()=>{
     console.log("Server is running at 3200");
+    // connectToMongoDB();
+    connectUsingMongoose();
 });
 
